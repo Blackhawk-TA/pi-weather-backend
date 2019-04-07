@@ -7,7 +7,7 @@ const directory = require('serve-index');
 const cors = require("cors");
 const fs = require("fs");
 
-const sDatabasePath = "../resources/weather.db";
+const sDatabasePath = __dirname + "/../resources/weather.db";
 const iOneHour = 3600000;
 
 function initBackendServer() {
@@ -19,7 +19,8 @@ function initBackendServer() {
 	app.use(express.static(__dirname + "/weatherData"));
 
 	app.listen(port);
-	console.log(`Server started running: http://localhost:${port}`);
+
+	console.log(`Server started running: http://localhost:${port}/`);
 }
 
 function fetchData(iTimespan) {
@@ -28,8 +29,8 @@ function fetchData(iTimespan) {
 		iCurTimeInSec = Math.round(new Date().getTime() / 1000),
 		iMinAllowedDate = iCurTimeInSec - iTimespanInSec;
 
-	if (!fs.existsSync("../resources")) {
-		fs.mkdirSync("../resources");
+	if (!fs.existsSync(__dirname + "/../resources/weather.db")) {
+		fs.mkdirSync(__dirname + "/../resources/weather.db");
 	}
 
 	let oDatabase = new sqlite.Database(sDatabasePath, (err) => {
@@ -48,7 +49,7 @@ function fetchData(iTimespan) {
 				iTimespanModifier,
 				iAverage = 0,
 				index = 0,
-				sJsonFolderPath = "../weatherData/",
+				sJsonFolderPath = __dirname + "/weatherData/",
 				sJsonPath = sJsonFolderPath + sTable + ".json",
 				oData = {};
 
@@ -120,5 +121,5 @@ function executeFetch() {
 }
 
 initBackendServer();
-// executeFetch();
-// setInterval(() => executeFetch(), iOneHour);
+executeFetch();
+setInterval(() => executeFetch(), iOneHour);
