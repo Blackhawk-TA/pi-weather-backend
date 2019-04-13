@@ -3,14 +3,12 @@
  */
 const sqlite = require("sqlite3").verbose();
 const express = require("express");
-const directory = require('serve-index');
 const cors = require("cors");
-const fs = require("fs");
-
 const sDatabasePath = __dirname + "/../resources/weather.db";
-const iOneHourMs = 3600000;
 const iOneDaySec = 86400;
+
 const aTables = ["temperature", "humidity", "pressure", "airQuality"];
+const aTimespans = [1, 7, 30, 365];
 
 /**
  * Start server to allow json files to be accessed from outside
@@ -19,80 +17,89 @@ function initBackendServer() {
 	let app = express(),
 		port = process.env.PORT || 4000;
 
-	app.use(cors());
-	app.use(directory(__dirname + "/weatherData", {}));
-	app.use(express.static(__dirname + "/weatherData"));
+	aTables.forEach((sTable) => {
+		app.use(cors());
+		app.use("/" + sTable, (req, res) => {
+			let oDatabase = new sqlite.Database(sDatabasePath, (err) => {
+				if (err) return console.error(err.message);
+			});
 
+			fetchData(oDatabase, sTable, aTimespans).then((fulfilled) => {
+				res.send(fulfilled);
+				oDatabase.close((err) => {
+					if (err) throw err;
+					console.log("Data request successful.");
+				});
+			});
+		});
+	});
 	app.listen(port);
 
 	console.log(`Server started running: http://localhost:${port}/`);
 }
 
 /**
- * Fetches the data of a specific timespan from the database and calculates the average, min./max.
+ * Fetches the data of the given timespans from the database and calculates the average, min./max.
  * The result is stored in json files.
  *
- * @param iTimespan {number} The timespan in which the data shall be collected
- * @param aDatabaseTables {string[]} The name of the database tables which shall be accessed
+ * @param aTimespans {number[]} The timespans in which the data shall be collected
+ * @param sDatabaseTable {string} The name of the database table which shall be accessed
+ * @param oDatabase {object} The database to fetch the data from
  */
-function fetchData(iTimespan, aDatabaseTables) {
+function fetchData(oDatabase, sDatabaseTable, aTimespans) {
 	return new Promise((resolve) => {
-		let iTimespanInSec = iTimespan * iOneDaySec,
+		let iMaxTimespanInSec = Math.max.apply(Math, aTimespans) * iOneDaySec,
 			iCurTimeInSec = Math.round(new Date().getTime() / 1000),
-			iMinAllowedDate = iCurTimeInSec - iTimespanInSec;
+			iMinAllowedDate = iCurTimeInSec - iMaxTimespanInSec;
 
-		if (!fs.existsSync(__dirname + "/../resources/weather.db")) {
-			fs.mkdirSync(__dirname + "/../resources/weather.db");
-		}
+		oDatabase.all(`SELECT * FROM ${sDatabaseTable} WHERE date > ${iMinAllowedDate}`, [], (err, aRows) => {
+			if (err) throw err;
+			let oData = {},
+				aMinValues,
+				aAvgValues,
+				aMaxValues,
+				aExtremeValues,
+				iValuesSum = 0,
+				iPreviousDate,
+				iValue,
+				iValuesAmount = 0,
+				iExpectedValueAmount,
+				iValueDifference,
+				iTimespanInSec,
+				iRelMinAllowedDate;
 
-		let oDatabase = new sqlite.Database(sDatabasePath, (err) => {
-			if (err) return console.error(err.message);
-			console.log("Connected to SQLite database " + sDatabasePath);
-		});
+			aTimespans.forEach((iTimespan) => {
+				aMinValues = [];
+				aAvgValues = [];
+				aMaxValues = [];
+				aExtremeValues = [];
 
-		aDatabaseTables.forEach((sTable) => {
-			oDatabase.all(`SELECT * FROM ${sTable} WHERE date > ${iMinAllowedDate}`, [], (err, aRows) => {
-				if (err) throw err;
-				let aMinValues = [],
-					aAvgValues = [],
-					aMaxValues = [],
-					aExtremeValues = [],
-					iValuesSum = 0,
-					sJsonFolderPath = __dirname + "/weatherData/",
-					sJsonPath = sJsonFolderPath + sTable + ".json",
-					oData = {},
-					iPreviousDate,
-					iValue,
-					iValuesAmount = 0,
-					iExpectedValueAmount = getExpectedValueAmount(iTimespan),
-					iValueDifference;
+				iExpectedValueAmount = getExpectedValueAmount(iTimespan);
+				iTimespanInSec = iTimespan * iOneDaySec;
+				iRelMinAllowedDate = iCurTimeInSec - iTimespanInSec;
 
 				for (let i = 1; i < aRows.length; i++) {
-					iPreviousDate = getDateScale(aRows[i - 1].date, iTimespan);
-					iValue = aRows[i - 1].value;
-					iValuesSum += iValue;
-					iValuesAmount++;
-					aExtremeValues.push(iValue);
+					if (aRows[i].date > iRelMinAllowedDate) {
+						iPreviousDate = getDateScale(aRows[i - 1].date, iTimespan);
+						iValue = aRows[i - 1].value;
+						iValuesSum += iValue;
+						iValuesAmount++;
+						aExtremeValues.push(iValue);
 
-					if (iPreviousDate !== getDateScale(aRows[i].date, iTimespan)) {
-						if (iTimespan !== 1) {
-							aMinValues.push(Math.min.apply(Math, aExtremeValues));
-							aMaxValues.push(Math.max.apply(Math, aExtremeValues));
-						}
-						aAvgValues.push(Number((iValuesSum / iValuesAmount).toFixed(2)));
+						if (iPreviousDate !== getDateScale(aRows[i].date, iTimespan)) {
+							if (iTimespan !== 1) {
+								aMinValues.push(Math.min.apply(Math, aExtremeValues));
+								aMaxValues.push(Math.max.apply(Math, aExtremeValues));
+							}
+							aAvgValues.push(Number((iValuesSum / iValuesAmount).toFixed(2)));
 
-						if (iValuesAmount > 1) {
-							aExtremeValues = [];
-							iValuesSum = 0;
-							iValuesAmount = 0;
+							if (iValuesAmount > 1) {
+								aExtremeValues = [];
+								iValuesSum = 0;
+								iValuesAmount = 0;
+							}
 						}
 					}
-				}
-
-				if (fs.existsSync(sJsonPath)) {
-					oData = require(sJsonPath);
-				} else if (!fs.existsSync(sJsonFolderPath)) {
-					fs.mkdirSync(sJsonFolderPath);
 				}
 
 				if (aAvgValues.length < iExpectedValueAmount) {
@@ -111,24 +118,14 @@ function fetchData(iTimespan, aDatabaseTables) {
 					"avg": aAvgValues,
 					"max": aMaxValues
 				};
-
-				fs.writeFile(sJsonPath, JSON.stringify(oData, null, 4), "utf-8", (err) => {
-					if (err) throw err;
-					console.log(`Updated ${sTable} for timespan ${iTimespan}`);
-					resolve();
-				});
 			});
-		});
-
-		oDatabase.close((err) => {
-			if (err) throw err;
-			console.log("Closed the database connection.");
+			resolve(oData);
 		});
 	});
 }
 
 /**
- * Gets tge expected amount of values which should be displayed for a specific timespan
+ * Gets the expected amount of values which should be displayed for a specific timespan
  * @param iTimespan {number} The timespan in which the data shall be displayed
  * @returns {number} The amount of expected values
  */
@@ -181,20 +178,4 @@ function getDateScale(iUnixTime, iTimespan) {
 	return iDatePart;
 }
 
-/**
- * Executes the database fetch for different timespans
- */
-function executeFetch() {
-	fetchData(1, aTables).then(() => {
-		fetchData(7, aTables).then(() => {
-			fetchData(30, aTables).then(() => {
-				fetchData(365, aTables).then(() => {
-				});
-			});
-		});
-	});
-}
-
 initBackendServer();
-executeFetch();
-setInterval(() => executeFetch(), iOneHourMs);

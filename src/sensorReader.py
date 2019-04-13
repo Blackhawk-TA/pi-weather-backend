@@ -50,6 +50,11 @@ try:
 			avg_pressure = calc_min_avg_max(pressure_data, counter)
 			avg_air_quality = calc_min_avg_max(air_quality_data, counter)
 
+			temp_data = []
+			humidity_data = []
+			pressure_data = []
+			air_quality_data = []
+
 			unix_time = round(time.time())
 
 			db_cursor.execute("INSERT INTO temperature(date, value) VALUES(?, ?)", (unix_time, avg_temperature))
@@ -65,16 +70,6 @@ try:
 			cur_humidity = round(sensor.data.humidity, 2)
 			cur_pressure = sensor.data.pressure
 			cur_air_quality = sensor.data.gas_resistance
-
-			live_data = {
-				"temperature": cur_temperature,
-				"humidity": cur_humidity,
-				"pressure": cur_pressure,
-				"airQuality": cur_air_quality
-			}
-
-			with open(json_path, "w") as json_file:
-				json.dump(live_data, json_file)
 
 			temp_data.append(cur_temperature)
 			humidity_data.append(cur_humidity)
