@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import bme680
 import json
