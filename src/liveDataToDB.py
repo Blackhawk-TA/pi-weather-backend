@@ -2,23 +2,30 @@
 # This is used to read the data from the LiveDataServer and write it to the database
 # It is only required when the database runs on a different device than the sensor
 
+import os
 import time
 import urllib.request
 import json
 import src.databaseUtils as Utils
+from dotenv import load_dotenv
+load_dotenv()
+
+server_ip = os.getenv("BACKEND_LIVE_SRV_IP")
+server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
+server_url = "http://" + server_ip + ":" + server_port + "/"
+counter = 0  # Count to 60min, save when counter at 3600
 
 db_path = "../resources/weather.db"
+db = Utils.init_database(db_path)
+
 temp_data = []
 humidity_data = []
 pressure_data = []
 air_quality_data = []
-counter = 0  # Count to 60min, save when counter at 3600
-
-db = Utils.init_database(db_path)
 
 while True:
 	try:
-		with urllib.request.urlopen("http://192.168.178.21:8000", timeout=2) as url:
+		with urllib.request.urlopen(server_url, timeout=2) as url:
 			data = json.loads(url.read().decode())
 			cur_temperature = data["temperature"]
 			cur_humidity = data["humidity"]

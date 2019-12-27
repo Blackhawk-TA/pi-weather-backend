@@ -10,3 +10,4 @@ pi-weather-backend.iml
 
 # data
 /resources/weather.db
+.env

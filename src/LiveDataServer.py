@@ -3,6 +3,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import bme680
 import json
 import time
+import os
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -44,7 +45,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.wfile.flush()
 
 
+server_ip = os.getenv("BACKEND_LIVE_SRV_IP")
+server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
+
 time.sleep(300)  # Timout for sensor calibration
 
-httpd = HTTPServer(("192.168.178.21", 8000), SimpleHTTPRequestHandler)
+httpd = HTTPServer((server_ip, server_port), SimpleHTTPRequestHandler)
 httpd.serve_forever()
