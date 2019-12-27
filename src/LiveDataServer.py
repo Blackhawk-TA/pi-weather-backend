@@ -2,6 +2,7 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import bme680
 import json
+import time
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -42,6 +43,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.wfile.write(str.encode(response))
 		self.wfile.flush()
 
+
+time.sleep(300)  # Timout for sensor calibration
 
 httpd = HTTPServer(("192.168.178.21", 8000), SimpleHTTPRequestHandler)
 httpd.serve_forever()

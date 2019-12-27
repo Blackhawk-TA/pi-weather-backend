@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+# This is used to read the sensor data directly on the device and write it to the database
+# This is only required when the database runs on the same device as the sensor
+
 import time
 import bme680
-import sqlite3
+import src.databaseUtils as Utils
 
 db_path = "../resources/weather.db"
-json_path = "weatherData/liveData.json"
-
 sensor = bme680.BME680()
 
 sensor.set_humidity_oversample(bme680.OS_2X)
@@ -24,46 +25,19 @@ pressure_data = []
 air_quality_data = []
 counter = 0  # Count to 60min, save when counter at 3600
 
-db = sqlite3.connect(db_path)
-db_cursor = db.cursor()
-db_cursor.execute("CREATE TABLE IF NOT EXISTS temperature(date NUMERIC, value NUMERIC)")
-db_cursor.execute("CREATE TABLE IF NOT EXISTS humidity(date NUMERIC, value NUMERIC)")
-db_cursor.execute("CREATE TABLE IF NOT EXISTS pressure(date NUMERIC, value NUMERIC)")
-db_cursor.execute("CREATE TABLE IF NOT EXISTS airQuality(date NUMERIC, value NUMERIC)")
-
-
-def calc_min_avg_max(data):  # Calculates the minimum, average and maximum value of a list
-	average = 0
-	for i in range(0, len(data)):
-		average += data[i]
-
-	average = round(average / counter, 2)
-	return average
-
+db = Utils.init_database(db_path)
 
 try:
 	while True:
-		if counter == 3600:  # save data to database
-			avg_temperature = calc_min_avg_max(temp_data)
-			avg_humidity = calc_min_avg_max(humidity_data)
-			avg_pressure = calc_min_avg_max(pressure_data)
-			avg_air_quality = calc_min_avg_max(air_quality_data)
-
-			temp_data = []
-			humidity_data = []
-			pressure_data = []
-			air_quality_data = []
-
-			unix_time = round(time.time())
-
-			db_cursor.execute("INSERT INTO temperature(date, value) VALUES(?, ?)", (unix_time, avg_temperature))
-			db_cursor.execute("INSERT INTO humidity(date, value) VALUES(?, ?)", (unix_time, avg_humidity))
-			db_cursor.execute("INSERT INTO pressure(date, value) VALUES(?, ?)", (unix_time, avg_pressure))
-			db_cursor.execute("INSERT INTO airQuality(date, value) VALUES(?, ?)", (unix_time, avg_air_quality))
-			db.commit()
-			print("Pushed to database.")
-
-			counter = 0
+		if counter >= 3600:  # save data to database
+			counter, temp_data, humidity_data, pressure_data, air_quality_data = Utils.write_to_database(
+				db,
+				counter,
+				temp_data,
+				humidity_data,
+				pressure_data,
+				air_quality_data
+			)
 
 		if sensor.get_sensor_data():
 			cur_temperature = sensor.data.temperature - 3.5
