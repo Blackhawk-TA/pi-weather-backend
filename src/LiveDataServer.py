@@ -4,6 +4,7 @@ import bme680
 import json
 import time
 import os
+from dotenv import load_dotenv
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -45,6 +46,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.wfile.flush()
 
 
+load_dotenv()
 server_ip = os.getenv("BACKEND_LIVE_SRV_IP")
 server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
 
