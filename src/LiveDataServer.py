@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import bme680
 import json
 import time
 import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from dotenv import load_dotenv
 
 
@@ -52,5 +52,5 @@ server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
 
 time.sleep(300)  # Timout for sensor calibration
 
-httpd = HTTPServer((server_ip, server_port), SimpleHTTPRequestHandler)
+httpd = HTTPServer((server_ip, int(server_port)), SimpleHTTPRequestHandler)
 httpd.serve_forever()
