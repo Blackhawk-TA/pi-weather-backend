@@ -4,7 +4,7 @@
 
 import time
 import bme680
-import src.databaseUtils as Utils
+from src.utils import database as db_utils
 
 db_path = "../resources/weather.db"
 sensor = bme680.BME680()
@@ -25,12 +25,12 @@ pressure_data = []
 air_quality_data = []
 counter = 0  # Count to 60min, save when counter at 3600
 
-db = Utils.init_database(db_path)
+db = db_utils.init_database(db_path)
 
 try:
 	while True:
 		if counter >= 3600:  # save data to database
-			counter, temp_data, humidity_data, pressure_data, air_quality_data = Utils.write_to_database(
+			counter, temp_data, humidity_data, pressure_data, air_quality_data = db_utils.write_to_database(
 				db,
 				counter,
 				temp_data,

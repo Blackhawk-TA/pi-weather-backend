@@ -6,7 +6,7 @@ import os
 import time
 import urllib.request
 import json
-import src.databaseUtils as Utils
+from src.utils import database as db_utils
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,7 +16,7 @@ server_url = "http://" + server_ip + ":" + server_port + "/"
 counter = 0  # Count to 60min, save when counter at 3600
 
 db_path = "../resources/weather.db"
-db = Utils.init_database(db_path)
+db = db_utils.init_database(db_path)
 
 temp_data = []
 humidity_data = []
@@ -38,8 +38,8 @@ while True:
 				pressure_data.append(cur_pressure)
 				air_quality_data.append(cur_air_quality)
 
-			if counter >= 3600:  # save data to database
-				counter, temp_data, humidity_data, pressure_data, air_quality_data = Utils.write_to_database(
+			if counter >= 5:  # save data to database
+				counter, temp_data, humidity_data, pressure_data, air_quality_data = db_utils.write_to_database(
 					db,
 					counter,
 					temp_data,
