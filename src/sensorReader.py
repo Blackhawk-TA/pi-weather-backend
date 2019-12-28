@@ -4,7 +4,7 @@
 
 import time
 import bme680
-from src.utils import database as db_utils
+from utils import database as db_utils
 
 db_path = "../resources/weather.db"
 sensor = bme680.BME680()

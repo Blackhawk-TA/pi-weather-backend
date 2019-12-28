@@ -6,7 +6,7 @@ import os
 import time
 import urllib.request
 import json
-from src.utils import database as db_utils
+from utils import database as db_utils
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -38,7 +38,7 @@ while True:
 				pressure_data.append(cur_pressure)
 				air_quality_data.append(cur_air_quality)
 
-			if counter >= 5:  # save data to database
+			if counter >= 3600:  # save data to database
 				counter, temp_data, humidity_data, pressure_data, air_quality_data = db_utils.write_to_database(
 					db,
 					counter,
