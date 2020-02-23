@@ -20,6 +20,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 	sensor.set_gas_heater_duration(150)
 	sensor.select_gas_heater_profile(0)
 
+	temp_offset = 6.5  # Adjusts temperature
 	live_data = {
 		"temperature": 0,
 		"humidity": 0,
@@ -30,7 +31,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_GET(self):
 		if self.sensor.get_sensor_data():
 			self.live_data = {
-				"temperature": round(self.sensor.data.temperature - 3.5, 2),
+				"temperature": round(self.sensor.data.temperature - self.temp_offset, 2),
 				"humidity": round(self.sensor.data.humidity, 2),
 				"pressure": round(self.sensor.data.pressure, 2),
 				"airQuality": round(self.sensor.data.gas_resistance)
