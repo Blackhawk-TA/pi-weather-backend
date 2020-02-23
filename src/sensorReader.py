@@ -24,6 +24,7 @@ humidity_data = []
 pressure_data = []
 air_quality_data = []
 counter = 0  # Count to 60min, save when counter at 3600
+temp_offset = 6.5  # Adjusts temperature
 
 db = db_utils.init_database(db_path)
 
@@ -40,7 +41,7 @@ try:
 			)
 
 		if sensor.get_sensor_data():
-			cur_temperature = sensor.data.temperature - 3.5
+			cur_temperature = sensor.data.temperature - temp_offset
 			cur_humidity = round(sensor.data.humidity, 2)
 			cur_pressure = sensor.data.pressure
 			cur_air_quality = sensor.data.gas_resistance
