@@ -1,3 +1,4 @@
+//TODO remove all nodejs related stuff
 /**
  * This is an independent nodejs script which fetches data from the Database and writes the data formatted to a JSON file
  */
