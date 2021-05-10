@@ -15,7 +15,7 @@ server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
 server_url = "http://" + server_ip + ":" + server_port + "/"
 counter = 0  # Count to 60min, save when counter at 3600
 
-db_path = "../resources/weather.db"
+db_path = "./resources/weather.db"
 db = db_utils.init_database(db_path)
 
 temp_data = []
