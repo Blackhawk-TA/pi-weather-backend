@@ -5,6 +5,7 @@
 import os
 import time
 import urllib.request
+import pathlib
 import json
 from utils import database as db_utils
 from dotenv import load_dotenv
@@ -15,7 +16,8 @@ server_port = os.getenv("BACKEND_LIVE_SRV_PORT")
 server_url = "http://" + server_ip + ":" + server_port + "/"
 counter = 0  # Count to 60min, save when counter at 3600
 
-db_path = "./resources/weather.db"
+project_path = pathlib.Path(__file__).parent.absolute().parent
+db_path = str(project_path) + "/resources/weather.db"
 db = db_utils.init_database(db_path)
 
 temp_data = []
